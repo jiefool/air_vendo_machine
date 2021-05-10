@@ -14,6 +14,7 @@ int coinInserted = 0;
 int interruptPin = 2;
 int solenoidControl = 3;
 int incomingByte = 0;
+int targetPressure = 20;
 
 
 const int ROW_NUM = 4; //four rows
@@ -89,6 +90,7 @@ void constantScreen(){
   printToLCD(0,0, "Air Vendo Machine");
   printToLCD(0,1, "Pressure: "+(String)pressureValue + " psi");
   printToLCD(0,2, "Coins: "+(String)coinInserted);
+  printToLCD(0,3, "Target PSI: "+(String)targetPressure);
 }
 
 void printToLCD(int x, int y, String text){
