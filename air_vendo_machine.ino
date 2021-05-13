@@ -14,7 +14,10 @@ int coinInserted = 0;
 int interruptPin = 2;
 int solenoidControl = 3;
 int incomingByte = 0;
-int targetPressure = 20;
+int targetPressure = 0;
+boolean askingPresureScreen = false;
+String keyInput = "";
+int requiredCoins = 0;
 
 
 const int ROW_NUM = 4; //four rows
@@ -43,55 +46,108 @@ void setup() {
   pinMode(solenoidControl, OUTPUT);
 
   closeSolenoid();
-  attachInterrupt(digitalPinToInterrupt(interruptPin), coinIncrement, FALLING);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), coinIncrement, RISING);
   
   constantScreen();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+    // put your main code here, to run repeatedly:
 
-  readPressure();
-  printToLCD(0,1, "Pressure: "+(String)pressureValue + " psi");
-  printToLCD(0,2, "Coins: "+(String)coinInserted);
-
-
-  if (Serial.available() > 0) {
-    // read the incoming byte:
-    incomingByte = Serial.read();
-
-    // say what you got:
-    Serial.print("I received: ");
-    Serial.println(incomingByte, DEC);
-
-    if(incomingByte == 49){
-      openSolenoid();  
+    if(!askingPresureScreen){
+      readPressure();
+      printToLCD(0,1, "Pressure: "+(String)pressureValue + " psi ");
+      printToLCD(0,2, "Coins: "+(String)coinInserted + "/" + (String)requiredCoins);
+      printToLCD(0,3, "Target PSI: "+(String)targetPressure);
+    
+    
+      if (Serial.available() > 0) {
+        // read the incoming byte:
+        incomingByte = Serial.read();
+    
+        // say what you got:
+        Serial.print("I received: ");
+        Serial.println(incomingByte, DEC);
+    
+        if(incomingByte == 49){
+          openSolenoid();  
+        }
+    
+        if(incomingByte == 50){
+          closeSolenoid();
+        }
+      }
     }
 
-    if(incomingByte == 50){
-      closeSolenoid();
+    if(targetPressure > 0 ){
+        if(pressureValue < targetPressure && coinInserted >= requiredCoins){
+          openSolenoid();
+        }
+        
+        if(pressureValue > targetPressure && pressureValue < (targetPressure + 5) ){
+          closeSolenoid();
+        }
     }
-  }
+  
 
-
-  char key = keypad.getKey();
-
-  if (key){
-    Serial.println(key);
-  }
+    //process keypad press
+    char key = keypad.getKey();
+    if (key){
+      processKeyInput(key);     
+    }
 
   
-  delay(250);
-  
+}
+
+
+void processKeyInput(char key){
+  Serial.println(key);
+  switch(key){
+    case 'A':
+      askingPresureScreen = true;
+      askTargetPressureScreen();
+      break;
+    case 'B':
+      askingPresureScreen = false;
+      setTargetPressure();
+      break;
+    case 'C':
+      break;
+    case 'D':
+      break;
+    case '#':
+      break;
+    case '*':
+      break;
+    default:
+      keyInput.concat(key);  
+      break;
+  }
+
+  askTargetPressureScreen();
+}
+
+void setTargetPressure(){
+  targetPressure = keyInput.toInt();
+  requiredCoins = ceil( (targetPressure - pressureValue) / 10);
+  keyInput = "";
 }
 
 
 void constantScreen(){
   printToLCD(0,0, "Air Vendo Machine");
-  printToLCD(0,1, "Pressure: "+(String)pressureValue + " psi");
+  printToLCD(0,1, "Pressure: "+(String)pressureValue + " psi ");
   printToLCD(0,2, "Coins: "+(String)coinInserted);
   printToLCD(0,3, "Target PSI: "+(String)targetPressure);
 }
+
+void askTargetPressureScreen(){
+  lcd.clear();
+  printToLCD(0,0, "Please set");
+  printToLCD(0,1, "target pressure...");
+  printToLCD(0,2, (String)keyInput);
+}
+
 
 void printToLCD(int x, int y, String text){
   lcd.setCursor(x,y);
