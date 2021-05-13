@@ -37,8 +37,6 @@ Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_
 
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
   lcd.init();
   lcd.clear();         
   lcd.backlight(); 
@@ -59,24 +57,7 @@ void loop() {
       printToLCD(0,1, "Pressure: "+(String)pressureValue + " psi ");
       printToLCD(0,2, "Coins: "+(String)coinInserted + "/" + (String)requiredCoins);
       printToLCD(0,3, "Target PSI: "+(String)targetPressure);
-    
-    
-      if (Serial.available() > 0) {
-        // read the incoming byte:
-        incomingByte = Serial.read();
-    
-        // say what you got:
-        Serial.print("I received: ");
-        Serial.println(incomingByte, DEC);
-    
-        if(incomingByte == 49){
-          openSolenoid();  
-        }
-    
-        if(incomingByte == 50){
-          closeSolenoid();
-        }
-      }
+
     }
 
     if(targetPressure > 0 ){
@@ -101,7 +82,6 @@ void loop() {
 
 
 void processKeyInput(char key){
-  Serial.println(key);
   switch(key){
     case 'A':
       askingPresureScreen = true;
@@ -112,8 +92,10 @@ void processKeyInput(char key){
       setTargetPressure();
       break;
     case 'C':
+      closeSolenoid();
       break;
     case 'D':
+      openSolenoid();
       break;
     case '#':
       break;
@@ -121,16 +103,16 @@ void processKeyInput(char key){
       break;
     default:
       keyInput.concat(key);  
+      askTargetPressureScreen();
       break;
   }
-
-  askTargetPressureScreen();
 }
 
 void setTargetPressure(){
   targetPressure = keyInput.toInt();
   requiredCoins = ceil( (targetPressure - pressureValue) / 10);
   keyInput = "";
+  constantScreen();
 }
 
 
